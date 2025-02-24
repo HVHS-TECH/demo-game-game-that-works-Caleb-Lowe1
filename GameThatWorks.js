@@ -26,7 +26,7 @@ function setup() {
 // draw()
 /*******************************************************/
 function draw() {
-    background ('orange')		
+    background ('green')		
     moveplayer();
 }
 function displayScore() {

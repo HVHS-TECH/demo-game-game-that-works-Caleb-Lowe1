@@ -16,18 +16,20 @@ console.log("setup: ");
 Player = new Sprite(100, 100, 20, 20, 'd');
 Player.color = 'blue';
 cnv = new Canvas(canvasWidth, canvasHeight);
-createcoin();
-
-
-}
+createcoin(); }
 
 
 /*******************************************************/
 // draw()
 /*******************************************************/
+
+
 function draw() {
-background ('yellow')		
+background ('orange')		
 moveplayer();
+
+
+
 }
 function displayScore() {
 text("Score:" + score, 100, 150)    
@@ -36,6 +38,8 @@ function createcoin(){
 random (0, canvasHeight)
 Coin = new Sprite(random (0, canvasHeight), random(0, canvasHeight), COINSIZE, 'd')
 Coin.color = 'yellow';
+
+
 
 }
 function moveplayer() {   

@@ -26,7 +26,7 @@ createcoin();
 // draw()
 /*******************************************************/
 function draw() {
-background ('green')		
+background ('yellow')		
 moveplayer();
 }
 function displayScore() {

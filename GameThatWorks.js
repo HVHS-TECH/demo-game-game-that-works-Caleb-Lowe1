@@ -1,26 +1,51 @@
 //variables
 const canvasWidth = 500;
 const canvasHeight = 500;
-const movementSpeed = 5;
+const MOVEMENTSPEED = 6;
 var Player;
 var coin;
+var specialCoin; // Track the special coin
+var specialCoinTime = 10000; // Time to spawn special coin (10 seconds after game starts)
 var gameState = "play";
 var score = 0;
 const COINSIZE = 10;
-const COIN_TIMEOUT = 2000;
+const COIN_TIMEOUT = 3000;
 const PLAYERSIZE = 20;
+const SPECIALCOINSIZE = 15; // Special coin size
+const SPECIALCOINTIME = 1000; // Special coin lifetime in milliseconds
 /*******************************************************/
 // setup()
 /*******************************************************/
 function setup() {
     score = 0;
     console.log("setup: ");
-    cnv = new Canvas(canvasWidth, canvasHeight);
+    cnv = new Canvas(canvasWidth, canvasHeight, "Pixelated x4");
     Player = new Sprite(100, 100, PLAYERSIZE, PLAYERSIZE, 'd');
     Player.color = 'orange';
     Player.rotationSpeed = 0;
     coinGroup = new Group();
-    createCoin ();
+    coinGroup.add(createCoin());
+
+    // Create special coin after 10 seconds
+    setTimeout(() => {
+        specialCoin = createSpecialCoin();
+    }, specialCoinTime);
+}
+
+function playerHitCoin(coin, Player) {
+    // Delete the regular coin which was hit
+    coin.remove();
+    score++;
+   
+    Player.rotationSpeed = 0;
+    Player.rotation = 0;
+}
+
+function playerHitSpecialCoin(specialCoin, Player) {
+    // Special coin hit gives 1000 score
+    specialCoin.remove();
+    score += 100;
+    specialCoin = null; // After being hit, remove the special coin permanently
 }
 
 /*******************************************************/
@@ -34,113 +59,98 @@ function draw() {
     else if (gameState == "lose") {
         loseGame();
     }
-        
 }
+
 function runGame() {
-    background('gray'); 
-    if (random(0,500)<5) {
+    background('gray');
+    
+    // Spawn new coins occasionally
+    if (random(0, 500) < 4) {
         coinGroup.add(createCoin());
     }
-    movePlayer ();
+    
+    movePlayer();
     for (var i = 0; i < coinGroup.length; i++) {
-    console.log(coinGroup.length)
-    if(checkCoinTime(coinGroup[i])) {
-        coinGroup[i].remove();
-        gameState = "lose";
+        let coin = coinGroup[i];
+
+        if (checkCoinTime(coin)) {
+            coinGroup.remove(coin);
+            gameState = "lose";
+        }
     }
-    }
-    checkCoinTime();
+    
     coinGroup.collides(Player, playerHitCoin);
-    displayScore ();
-   
+
+    // If there's a special coin, check collision and timing
+    if (specialCoin) {
+        if (millis() - specialCoin.spawnTime < SPECIALCOINTIME) {
+            if (Player.collides(specialCoin)) {
+                playerHitSpecialCoin(specialCoin, Player);
+            }
+        } else {
+            // Remove special coin after 300 milliseconds if not hit
+            specialCoin.remove();
+            specialCoin = null; // After disappearing, special coin is gone for good
+        }
+    }
+
+    displayScore();
 }
+
 function loseGame() {
- background('red');
- Player.remove();
- coinGroup.remove();
- console.log("Help");
+    background('red');
+    Player.remove();
+    coinGroup.remove();
+    textSize(50);
+    text("You lose ", 10, 100);
+    textSize(70);
+    text("Score: " + score, 10, 200);
+    console.log("Help");
 }
-function createCoin () {
-    coin = new Sprite(random (0, canvasHeight), random (0, canvasHeight), COINSIZE, 'd');
+
+function createCoin() {
+    coin = new Sprite(random(0, canvasWidth), random(0, canvasHeight), COINSIZE, 'd');
     coin.color = 'yellow';
-    //coinGroup.add(coin);
-    coin.spawntime = millis ();
-    return(coin);
-  
+    coin.spawntime = millis();  // Set the spawn time when the coin is created
+    return coin;
 }
-function displayScore () {
+
+function createSpecialCoin() {
+    // Create a special coin that appears after 10 seconds
+    let specialCoin = new Sprite(random(0, canvasWidth), random(0, canvasHeight), SPECIALCOINSIZE, 'd');
+    specialCoin.color = 'orange';
+    specialCoin.spawnTime = millis(); // Store the time when the special coin is created
+    return specialCoin;
+}
+
+function displayScore() {
     textSize(30);
-    text("Score: "+ score, 0, 25);
-}
-function checkCoinTime () {
-    //check if the coin has been around too long (COIN_TIMEOUT milliseconds)
-   if (coin.spawntime + COIN_TIMEOUT < millis()){
-  coin.remove()
-   }
+    text("Score: " + score, 0, 25);
 }
 
-function playerHitCoin(coin, Player) {
-    // Delete the alien which was hit
-    coin.remove();
-    score++
-   
-    Player.rotationSpeed = 0;
-    Player.rotation = 0;
-   
-    }   
+function checkCoinTime(_coin) {
+    // Check if the coin has been around too long
+    if (_coin.spawntime + COIN_TIMEOUT < millis()) {
+        _coin.remove();  // Remove the coin that has been around for too long
+        return true;
+    }
+    return false;
+}
 
-function movePlayer () {
+function movePlayer() {
     if (kb.pressing('a')) {
+        Player.vel.x = -MOVEMENTSPEED;
+    } else if (kb.pressing('d')) {
+        Player.vel.x = MOVEMENTSPEED;
+    } else {
+        Player.vel.x = 0;
+    }
 
-        // Set sprite's velocity to the left
-        Player.vel.x = -movementSpeed;
-    
+    if (kb.pressing('w')) {
+        Player.vel.y = -MOVEMENTSPEED;
+    } else if (kb.pressing('s')) {
+        Player.vel.y = MOVEMENTSPEED;
+    } else {
+        Player.vel.y = 0;
     }
-    
-    else if (kb.pressing ('d')) 
-    {
-        // Set sprite's velocity to the right
-        Player.vel.x = movementSpeed;      
-    
-    }
-    else if (kb.pressing ('w')) 
-        {
-            // Set sprite's velocity to the left
-            Player.vel.y = -movementSpeed;     
-        
-        }
-    else if (kb.pressing ('s')) 
-        {
-            
-                Player.vel.y = movementSpeed;      
-            
-        };
-    
-    if (kb.released('a')) {
-    
-        // Set sprite's velocity to zero
-        Player.vel.x = 0;
-    
-    }
-    
-    else if (kb.released('d')) 
-    {
-        // Set sprite's velocity to zero
-        Player.vel.x = 0;
-    }
-    else if (kb.released('w')) 
-        {
-            // Set sprite's velocity to zero
-            Player.vel.y = 0;
-        }
-    
-    else if (kb.released('s')) 
-            {
-                // Set sprite's velocity to zero
-                Player.vel.y = 0;
-            };
 }
-
-/*******************************************************/
-//  END OF APP
-/*******************************************************/
